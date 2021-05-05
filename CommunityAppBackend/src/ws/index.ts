@@ -24,7 +24,7 @@ class WS {
 		})
 
 		wss.on('connection', ws => {
-			ws['isAllive'] = true
+			ws['isAlive'] = true
 			ws.on('pong', pong)
 			ws.on('message', message => {
 				this.recieveMessage(message.toString(), ws)
@@ -33,8 +33,8 @@ class WS {
 
 		const interval = setInterval(function ping() {
 			for(let ws of wss.clients){
-				if(ws['isAllive'] === false) return ws.terminate()
-				ws['isAllive'] = false
+				if(ws['isAlive'] === false) return ws.terminate()
+				ws['isAlive'] = false
 				ws.ping()
 			}
 		}, 30000);

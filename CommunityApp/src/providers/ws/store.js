@@ -45,7 +45,8 @@ class RouterStore {
 	onClose(){
 		if(this.status === 'closed') return
 		this.status = 'lost-connection'
-		this.reconectInterval = setInterval(() => this.init(), 2000)
+		if(!this.reconectInterval)
+			this.reconectInterval = setInterval(() => this.init(), 5000)
 	}
 
 	init(){
