@@ -5,6 +5,10 @@ function send(ws: WebSocket, type: string, message: any){
 	ws.send(JSON.stringify({ type, message }))
 }	
 
+function pong(){
+	this.isAlive  = true
+}
+
 class WS {	
 	
 	fastify: AppFastifyInstance
@@ -20,10 +24,22 @@ class WS {
 		})
 
 		wss.on('connection', ws => {
+			ws['isAllive'] = true
+			ws.on('pong', pong)
 			ws.on('message', message => {
 				this.recieveMessage(message.toString(), ws)
 			})
 		})
+
+		const interval = setInterval(function ping() {
+			for(let ws of wss.clients){
+				if(ws['isAllive'] === false) return ws.terminate()
+				ws['isAllive'] = false
+				ws.ping()
+			}
+		}, 30000);
+		
+		wss.on('close', () => clearInterval(interval))
 	}
 
 	addConnection(user_id: number, ws: WebSocket){
