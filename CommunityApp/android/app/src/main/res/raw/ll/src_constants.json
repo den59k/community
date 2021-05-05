@@ -1,0 +1,11 @@
+{
+	"url": "https://api.easix.ru/api",
+	"colors": {
+		"primary": "#F50969",
+		"darkPrimary": "#9B0D47",
+		"light": "#F5F5F5",
+		"semiLight": "#E8E8E8",
+		"lightGray": "#DDDDDD",
+		"gray": "#9C9C9C"
+	}
+}
