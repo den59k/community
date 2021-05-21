@@ -7,6 +7,14 @@ export const roomParamsSchema = getSchema({
 	required: [ 'room_id' ]
 }, 'params')
 
+export const userParamsSchema = getSchema({
+	properties: {
+		room_id: { type: 'string' },
+		user_id: { type: 'string' },
+	},
+	required: [ 'room_id', 'user_id' ]
+}, 'params')
+
 export const callSchema = getSchema({
 	properties: {
 		user_id: { type: 'string' }

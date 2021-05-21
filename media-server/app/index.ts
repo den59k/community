@@ -1,6 +1,10 @@
 import { AppFastifyInstance } from '../types/fastify';
 import { createWorker } from 'mediasoup'
 import Room from '../room';
+import sdpTransform from 'sdp-transform'
+
+import { generateOffer, generateAnswer } from '../libs/sdp'
+import { getDtlsParameters, getProduceOptions } from '../libs/parse-sdp'
 
 export default async function app (fastify: AppFastifyInstance){
 
@@ -17,39 +21,47 @@ export default async function app (fastify: AppFastifyInstance){
 		return { room_id: room.id }
 	})
 
-	fastify.post("/rooms/:room_id/users", async (request) => {
-		const { room_id } = request.params as any
-		const room = fastify.rooms.get(room_id)
-		const userData = await room.createUser()
-		return {
-			routerRtpCapabilities: room.router.rtpCapabilities,
-			...userData
-		}
-	})
-
-	fastify.put("/rooms/:room_id/users/:user_id", async (request) => {
+	fastify.post("/rooms/:room_id/users/:user_id", async (request) => {
 		const { room_id, user_id } = request.params as any
-		const { dtlsParameters } = request.body as any
 		const room = fastify.rooms.get(room_id)
+		const user = await room.addUser(user_id)
+		
+		const offer = { sdp: generateOffer(user.consumeTransport, []), type: 'offer' }
 
-		await room.users.get(user_id).confirmConsumeTransport({dtlsParameters})
-		return { success: "success" }
+		return { offer: null }
 	})
+
 
 	fastify.post("/rooms/:room_id/users/:user_id/produce", async (request) => {
 		const { room_id, user_id } = request.params as any
+		const { offer } = request.body as any
 		const room = fastify.rooms.get(room_id)
+
 		const user = room.users.get(user_id)
+		
+		const sdp = sdpTransform.parse(offer.sdp)
 
-		return await user.createProduceTransport(room.router)
-	})
+		const dtlsParameters = getDtlsParameters(sdp)
+		await user.createProduceTransport(room.router)
+		await user.confirmProduceTransport({ dtlsParameters })
 
-	fastify.put("/rooms/:room_id/users/:user_id/produce", async (request) => {
-		const { room_id, user_id } = request.params as any
-		const { dtlsParameters } = request.body as any
-		const room = fastify.rooms.get(room_id)
+		const produceOptions = getProduceOptions (sdp)
 
-		await room.users.get(user_id).confirmProduceTransport({dtlsParameters})
+		await user.produce(produceOptions)
+		
+		const answer = { sdp: generateAnswer(user.produceTransport, user.producers ), type: 'answer' }
+
+		const outbound = []
+		for(let [ key, value ] of room.users){
+			if(key === user_id) continue
+			
+			await user.addConsumers(user, room.router)
+			const offer = { sdp: generateOffer(user.consumeTransport, user.consumers), type: 'offer' }
+			
+			outbound.push({ id: key, offer })
+		}
+
+		return { answer, outbound }
 	})
 
 

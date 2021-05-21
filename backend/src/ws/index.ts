@@ -1,5 +1,6 @@
 import WebSocket from 'ws'
 import { AppFastifyInstance } from '../types/fastify'
+import { nanoid } from 'nanoid'
 
 function send(ws: WebSocket, type: string, message: any){
 	ws.send(JSON.stringify({ type, message }))
@@ -12,11 +13,13 @@ function pong(){
 class WS {	
 	
 	fastify: AppFastifyInstance
+	sockets: Map<string, WebSocket>
 	connections: Map<number, Set<WebSocket>>
 	
 	constructor(fastify: AppFastifyInstance){
 		this.fastify = fastify
 		this.connections = new Map()
+		this.sockets = new Map()
 		const wss = new WebSocket.Server({ server: fastify.server })
 		
 		wss.on('listening', () => {
@@ -25,6 +28,7 @@ class WS {
 
 		wss.on('connection', ws => {
 			ws['isAlive'] = true
+			ws['id'] = nanoid()
 			ws.on('pong', pong)
 			ws.on('message', message => {
 				this.recieveMessage(message.toString(), ws)
@@ -52,8 +56,10 @@ class WS {
 		}
 		
 		set.add(ws)
+		this.sockets.set(ws['id'], ws)
 		ws.on('close', () => {
 			set.delete(ws)
+			this.sockets.delete(ws['id'])
 			if(set.size === 0) this.connections.delete(user_id)
 		})
 	}
@@ -63,6 +69,11 @@ class WS {
 		if(!set) return "user is not connected"
 		for(let ws of set.values())
 			send(ws, type, message)
+	}
+
+	sendSocket(socket_id: string, type: string, message: any){
+		if(!this.sockets.has(socket_id)) return
+		send(this.sockets.get(socket_id), type, message)
 	}
 	
 	isUserConnected(user_id: number){
@@ -75,7 +86,7 @@ class WS {
 			this.fastify.model.tokensModel.decodeJWT(message.accessToken).then((userData) => {
 				if(!userData) return send(ws, 'error', { accessToken: "wrongToken" })
 				this.addConnection(userData.id, ws)
-				send(ws, 'handshake', { success: "success-connected!" } )
+				send(ws, 'handshake', { id: ws['id'] } )
 			})
 		}
 	}

@@ -36,6 +36,7 @@ function CallModalWindow ({ userData, incoming, room_id }){
 	const ws = useWS()
 	
 	const videoRef = useRef()
+	const sourceVideoRef = useRef()
 	
 	useEffect(() => {
 
@@ -112,24 +113,53 @@ function CallModalWindow ({ userData, incoming, room_id }){
 			setConnection({ device, recvTransport, room_id: _room_id, user_id: id })
 		}
 
-		init3()
+		const init = async () => {
+			let _room_id = room_id
+
+			if(!_room_id){
+				const roomData = await REST("/calls", { user_id: userData.id })
+				_room_id = roomData.room_id	
+			}
+
+			const { offer } = await REST("/calls/"+_room_id, { user_id: ws.id })
+
+			const pc = new RTCPeerConnection()
+			
+			setConnection({ room_id: _room_id, user_id: ws.id })
+
+			if(!offer) return 
+
+			await pc.setRemoteDescription(offer)
+			const answer = await pc.createAnswer()
+		}
+
+		init()
 	}, [])
 
+
 	const toggleVideo = async () => {
-		const device = connection.device
-		if(!connection.sendTransport){
-			const url = "http://localhost:5000/rooms/"+connection.room_id+"/users/"+connection.user_id
-			const { produceTransport } = await REST(url+"/produce")
-			const sendTransport = device.createSendTransport(produceTransport)
+		const stream = await navigator.mediaDevices.getUserMedia({audio: true, video: true});
+		const pc = new RTCPeerConnection()
+		for(let track of stream.getTracks())
+			pc.addTrack(track)
 
+		const offer = await pc.createOffer()
+		await pc.setLocalDescription(offer)
+		console.log(offer)
 
-		}
+		const { answer } = await REST("/calls/"+connection.room_id+"/users/"+connection.user_id+"/produce", { offer })
+
+		await pc.setRemoteDescription(answer)
+		console.log(answer)
+		
+		sourceVideoRef.current.srcObject = stream
 	}
 
 	return (
 		<ModalWindow title={incoming? `Звонок от пользователя ${userData.login}`: `Звонок пользователю ${userData.login}`}>
+			<video className={styles.source} autoPlay={true} muted={true} playsInline={true} ref={sourceVideoRef}></video>
 			<video autoPlay={true} muted={true} playsInline={true} ref={videoRef}></video>
-			{connection.device && (
+			{(
 				<div className={styles.buttons}>
 					<button onClick={toggleVideo}><IoIosVideocam/></button>
 				</div>

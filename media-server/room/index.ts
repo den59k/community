@@ -15,15 +15,16 @@ class Room {
 		this.users = new Map()
 	}
 
-	async createUser(){
-		const user = new User()
-		const userData = await user.init(this.router)
-		this.users.set(user.id, user)
-		return userData
+	
+	async addUser(user_id: string){
+		const user = new User(user_id)
+		this.users.set(user_id, user)
+		await user.init(this.router)
+		return user
 	}
-
+	
 	// async createTransport (incoming: boolean){
-	// 	const transport = await this.router.createWebRtcTransport({
+		// 	const transport = await this.router.createWebRtcTransport({
 	// 		listenIps : [ { ip: "0.0.0.0", announcedIp: "192.168.0.100" } ],
 	// 		enableUdp : true,
 	// 		enableTcp : true,

@@ -15,14 +15,18 @@ class User {
 	producers: types.Producer[]
 	consumers: types.Consumer[]
 
+	constructor(id: string){
+		this.id = id
+		this.producers = []
+		this.consumers = []
+	}
+
 	async init(router: types.Router){
 		this.consumeTransport = await router.createWebRtcTransport(transportOptions)
 		this.consumeTransport.on("icestatechange", state => console.log("receiver ICE state changed to "+state))
 		const { id, iceParameters, iceCandidates, dtlsParameters, sctpParameters } = this.consumeTransport
-		this.id = id
 
 		return {
-			id: this.id,
 			consumeTransport: { id, iceParameters, iceCandidates, dtlsParameters, sctpParameters }
 		}
 	}
@@ -38,11 +42,35 @@ class User {
 	async createProduceTransport (router: types.Router){
 		this.produceTransport = await router.createWebRtcTransport(transportOptions)
 		this.consumeTransport.on("icestatechange", state => console.log("sender ICE state changed to "+state))
-		const { id, iceParameters, iceCandidates, dtlsParameters, sctpParameters } = this.consumeTransport
 
-		return {
-			produceTransport: { id, iceParameters, iceCandidates, dtlsParameters, sctpParameters }
+		return this.produceTransport
+	}
+	
+	async produce(produceOptions: types.ProducerOptions[]){
+		for(let options of produceOptions){
+			const producer = await this.produceTransport.produce(options)
+			this.producers.push(producer)
+
+			await producer.enableTraceEvent([ "rtp", "pli" ]);
+			producer.on('trace', trace => console.log(trace))
 		}
+	}
+
+	async addConsumers (user: User, router: types.Router){
+		const consumers = []
+		for(let producer of user.producers){
+			const consumer = await this.consumeTransport.consume({
+				producerId: producer.id,
+				rtpCapabilities: router.rtpCapabilities,
+				paused: true
+			})
+			await consumer.enableTraceEvent([ "rtp", "pli" ]);
+	 		consumer.on('trace', trace => console.log(trace))
+
+			this.consumers.push(consumer) 
+		}
+
+		return this.consumers
 	}
 
 }

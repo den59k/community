@@ -1,5 +1,5 @@
 import type { UserFastifyRequest, AppFastifyInstance } from "../../types/fastify"
-import { callSchema, roomParamsSchema, transportSchema } from './schema'
+import { callSchema, roomParamsSchema, userParamsSchema, transportSchema } from './schema'
 
 export default async function calls (fastify: AppFastifyInstance){
 
@@ -18,12 +18,26 @@ export default async function calls (fastify: AppFastifyInstance){
 
 	fastify.post("/:room_id", { schema: roomParamsSchema }, async (request: UserFastifyRequest) => {
 		const { room_id } = request.params as any
-		const userData = await fastify.mediaSoup.addUser(room_id)
+		const { user_id } = request.body as any
+			
+		const userData = await fastify.mediaSoup.addUser(room_id, user_id)
+		fastify.ws.send(user_id, "call", { userData, room_id })
 
 		return userData
 	})
 
+	fastify.post("/:room_id/users/:user_id/produce", { schema: userParamsSchema }, async (request: UserFastifyRequest) => {
+		const { room_id, user_id } = request.params as any
+		const { offer } = request.body as any
+		console.log(room_id)
+		const { answer, outbound } = await fastify.mediaSoup.produce(room_id, user_id, offer)
 
+		for(let item of outbound){
+			fastify.ws.sendSocket(item.id, "consume", item)
+		}
+
+		return { answer }
+	})
 
 	// fastify.post("/:user_id", { schema: { ...userParamsSchema, ...callSchema } }, async (request: UserFastifyRequest) => {
 	// 	const { user_id } = request.params as any
