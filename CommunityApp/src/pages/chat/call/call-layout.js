@@ -7,23 +7,8 @@ import { useRouterStore } from 'src/providers/router'
 import { Container, Header, Left, Body, Right, Button, Icon, Title, Subtitle } from 'native-base';
 import { getTime } from 'src/statics/months'
 
-const CustomBody = observer(({chatStore}) => {
-	if(chatStore.status !== 'success')
-		return (
-			<Body style={styles.body}>
-				<Title>Загрузка...</Title>
-			</Body>
-		)
 
-	return (
-		<Body style={styles.body}>
-			<Title>{chatStore.userData.login}</Title>
-			<Subtitle>В сети: {getTime(chatStore.userData.last_login_time)}</Subtitle>
-		</Body>
-	)
-})
-
-function Layout ({children, chatStore}){
+function Layout ({children}){
 
 	const routerStore = useRouterStore()
 
@@ -35,12 +20,9 @@ function Layout ({children, chatStore}){
 						<Icon name='arrow-back' />
 					</Button>
 				</Left>
-				<CustomBody chatStore={chatStore}/>
-				<Right>
-					<Button transparent onPress={() => routerStore.push({...routerStore.currentPage, page: "call" })}>
-						<Icon name="md-videocam"/>
-					</Button>
-				</Right>
+				<Body style={styles.body}>
+					<Title>Звонок...</Title>
+				</Body>
 			</Header>
 			{children}
 		</Container>

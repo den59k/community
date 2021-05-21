@@ -1,6 +1,6 @@
 {
-	"url": "https://api.easix.ru/api",
-	"wsURL": "wss://api.easix.ru",
+	"url": "http://192.168.0.100:3001/api",
+	"wsURL": "ws://192.168.0.100:3001",
 	"colors": {
 		"primary": "#F50969",
 		"darkPrimary": "#9B0D47",

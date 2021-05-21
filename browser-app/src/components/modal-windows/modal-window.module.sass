@@ -1,0 +1,75 @@
+@import 'src/styles/constants'
+
+.modal
+	background-color: white
+	box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1)
+	animation: open 0.2s
+	margin: 20px
+	min-width: 400px
+	border-radius: 15px
+	overflow: hidden
+
+	.header
+		overflow: hidden
+		position: relative
+		background-color: $bkg
+
+		h3
+			font-size: 1.1em
+			margin: 0.9em
+			text-align: center
+			color: $primary
+			font-weight: 600
+
+		.closeButton
+			position: absolute
+			right: 0
+			top: 0
+			height: 100%
+			font-size: 2em
+			color: $bkg-primary
+			padding: 0 0.6em
+			background: none
+			border: none
+			svg
+				margin-top: 0.1em
+
+			&:hover
+				color: darken($bkg-primary, 20%)
+
+	.content
+		padding: 20px 3em
+		display: flex
+		flex-direction: column
+		align-items: stretch
+
+		&>*
+			width: auto
+			&:not(:last-child)
+				margin-bottom: 30px
+
+		button
+			align-self: center
+
+.group
+	display: flex
+
+	&>*:not(:last-child)
+		margin-right: 20px
+
+.confirmContent
+	text-align: center
+	font-weight: 500
+
+.buttons
+	display: flex
+	justify-content: center
+	
+	&>*
+		margin: 0 0.5em
+	
+@keyframes open
+	from 
+		transform: scale(0.8)
+	to
+		transition: scale(1)

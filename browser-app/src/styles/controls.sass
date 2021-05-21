@@ -1,0 +1,26 @@
+.button
+	background-color: $primary
+	padding: 0 2.6em
+	font-weight: 700
+	color: white
+	line-height: 3.2em
+	border-radius: 1.6em
+	text-transform: uppercase
+	font-size: 0.9em
+	border: none
+
+	&:hover
+		background-color: lighten($primary, 4%)
+
+	&:active
+		background-color: darken($primary, 5%)
+		
+	&.transparent
+		background: none
+		color: $primary
+
+	svg
+		font-size: 1.5em
+		vertical-align: middle
+		transform: translateY(-0.05em)
+		margin-right: 0.15em

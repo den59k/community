@@ -7,6 +7,7 @@ import Layout from 'src/components/layout'
 import Chat from './chat'
 import ChatList from './chat-list'
 import AddChat from './add-chat'
+import CallPage from './call'
 
 function getComponent (page){
 	if(page === 'add')
@@ -27,6 +28,8 @@ function ChatPage (){
 
 	if(routerStore.currentPage.page === 'chat')
 		return <Chat/>
+	if(routerStore.currentPage.page === 'call')
+		return <CallPage/>
 
 	return (
 		<Layout>

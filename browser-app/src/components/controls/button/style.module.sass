@@ -1,0 +1,20 @@
+@import 'src/styles/constants'
+
+.button
+	background-color: $primary
+	border: none
+	height: 3.2em
+	text-transform: uppercase
+	font-weight: 500
+	color: white
+	border-radius: 1.6em
+	padding: 0 3em
+	font-size: 0.9em
+
+	box-shadow: 0 4px 15px rgba(lighten($primary, 5%), 0.3)
+
+	&:hover
+		background-color: lighten($primary, 3%)
+
+	&:active
+		box-shadow: none

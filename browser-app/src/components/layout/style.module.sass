@@ -1,0 +1,39 @@
+@import 'src/styles/constants'
+	
+.container
+	height: 100vh
+	display: flex
+	flex-direction: column
+	
+.header
+	flex: 0 0 100px
+	border-bottom: 1px solid $light
+	display: flex
+	align-items: center
+	padding: 0 45px 
+	justify-content: space-between
+
+	h2
+		font-weight: 700
+		color: $primary
+		font-size: 1.8em
+
+.userInfo
+	display: flex
+	align-items: center
+	font-size: 1.2em
+
+	div
+		font-weight: 500 
+
+	button
+		background: none
+		font-size: 1.5em
+		border: none
+		color: $primary
+		padding: 0 0.4em
+		svg
+			transform: translateY(0.1em)
+
+.content
+	flex: 1 1 auto

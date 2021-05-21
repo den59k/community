@@ -1,0 +1,46 @@
+@import 'src/styles/constants'
+
+.input
+	width: 300px
+	position: relative
+
+	label
+		display: block
+		font-size: 0.9em
+		padding-left: 1.5em
+		font-weight: 600
+		line-height: 1.8em
+
+	input
+		width: 100%
+		height: 3.2em
+		padding-left: 1.5em
+		border: none
+		background: $input-bkg
+		border-radius: 0.7em
+		box-sizing: border-box
+		color: $dark
+		border: 1px solid $input-bkg
+
+		&:focus
+			border-color: $primary
+
+		&::placeholder
+			color: $light
+
+	svg
+		position: absolute
+		right: 18px
+		top: 50%
+		transform: translateY(-50%)
+		font-size: 18px
+		pointer-events: none
+		color: $light
+
+.error
+	position: absolute
+	top: 100%
+	font-size: 0.8em
+	font-weight: 500
+	left: 1.5em
+	color: $error

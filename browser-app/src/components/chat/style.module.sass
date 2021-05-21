@@ -1,0 +1,71 @@
+@import 'src/styles/constants'
+
+.container
+	background-color: $input-bkg
+	flex: 1 1 auto
+	display: flex
+	flex-direction: column
+	overflow: hidden
+
+.messages
+	flex: 1 1 auto
+	overflow-x: hidden
+	overflow-y: auto
+	display: flex
+	flex-direction: column-reverse
+	align-items: flex-start
+
+.message
+	margin: 0.3em 1.5em
+
+	&.my
+		align-self: flex-end
+
+		.name
+			color: $primary
+
+	.content
+		background-color: white
+		padding: 0.7em 1em
+		border-radius: 0.8em
+
+.messageHeader
+	display: flex
+	justify-content: space-between
+	font-size: 0.9em
+	color: $gray
+	padding: 0 0.5em
+	margin-top: 0.8em
+
+	&.hide
+		display: none
+
+	div
+		margin: 0 0.5em
+
+.input
+	display: flex
+	padding: 10px
+	align-items: center
+
+	.text
+		flex: 1 1 auto
+		resize: none
+		padding: 1em 1.5em
+		border: none
+		background-color: darken($input-bkg, 7%)
+		border-radius: 1em
+		overflow-x: hidden
+		overflow-y: auto
+
+
+	button
+		flex: 0 0 40px
+		height: 40px
+		background: none
+		border: none
+		margin: 0 0.5em
+
+		svg
+			font-size: 2em
+			color: $primary

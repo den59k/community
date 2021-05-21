@@ -1,0 +1,38 @@
+@import 'src/styles/constants'
+
+.container
+	background: none
+	border: none
+	display: flex
+	align-items: center
+
+	label
+		pointer-events: none
+		margin-left: 0.6em
+		font-weight: 500
+		font-size: 0.95em
+		color: #777777
+	
+.checkbox
+	width: 21px
+	height: 21px
+	border: 1px solid #BCBCBC
+	border-radius: 8px
+
+	svg
+		vertical-align: middle
+		width: 100%
+		transform: translateY(0em)
+		font-size: 14px
+		transform: scale(0.8)
+		opacity: 0
+		transition: scale 0.2s, opacity 0.2s
+
+.container.active
+	.checkbox
+		background-color: $primary
+		border-color: $primary
+	svg
+		transform: none
+		opacity: 1
+		color: white

@@ -1,0 +1,33 @@
+@import 'src/styles/constants'
+	
+.segmentButton
+	position: relative
+
+	.buttons
+		display: flex
+
+		button
+			flex: 1 1 100px
+			background: none
+			border: 2px solid $primary
+			height: 3em
+			color: $primary
+
+			&:first-child
+				border-radius: 1.5em 0 0 1.5em
+
+			&:last-child
+				border-radius: 0 1.5em 1.5em 0
+			
+			&:not(:last-child)
+				border-right: none
+
+			&.active
+				background-color: $primary
+				color: white
+			
+	label
+		font-size: 0.9em
+		padding-left: 1.5em
+		font-weight: 500
+		top: -1.2em
