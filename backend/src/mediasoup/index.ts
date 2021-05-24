@@ -19,7 +19,10 @@ class MediaSoup {
 		return response.data
 	}
 
-
+	async consume(room_id: string, user_id: string, answer: any){
+		const response = await axios.post(this.url+"/rooms/"+room_id+"/users/"+user_id+"/consume", { answer })
+		return response.data
+	}
 
 
 	async createTransport (room_id: string, options: any){

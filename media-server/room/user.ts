@@ -51,7 +51,7 @@ class User {
 			const producer = await this.produceTransport.produce(options)
 			this.producers.push(producer)
 
-			await producer.enableTraceEvent([ "rtp", "pli" ]);
+			//await producer.enableTraceEvent([ "rtp", "pli" ]);
 			producer.on('trace', trace => console.log(trace))
 		}
 	}
@@ -71,6 +71,11 @@ class User {
 		}
 
 		return this.consumers
+	}
+
+	async resumeConsumers (){
+		for(let consumer of this.consumers)
+			await consumer.resume()
 	}
 
 }

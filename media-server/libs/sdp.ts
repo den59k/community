@@ -1,5 +1,5 @@
 import { types } from 'mediasoup'
-import sdpTransform, { MediaAttributes } from 'sdp-transform'
+import sdpTransform, { SharedAttributes } from 'sdp-transform'
 import { MediaDescription } from 'sdp-transform'
 
 interface Description extends MediaDescription {
@@ -23,54 +23,76 @@ function getRTCPFeedback (codecs: types.RtpCodecParameters[]){
 }
 
 function producerToMedia(transport: types.WebRtcTransport, producer: types.Producer | types.Consumer): Description {
-	return ({
-			rtp: producer.rtpParameters.codecs.map(codec => ({
-				payload: codec.payloadType,
-				codec: codec.mimeType.split("/")[1],
-				rate: codec.clockRate,
-				encoding: codec.channels
-			})),
-			fmtp: producer.rtpParameters.codecs.map(codec => ({
-				payload: codec.payloadType,
-				config: codec.parameters.length > 0?codec.parameters.map(param => param.type+"="+param.parameter).join(";"): ''
-			})).filter(item => item.config !== ''),
-			type: producer.kind,
-			port: 9,
-			protocol: 'UDP/TLS/RTP/SAVPF',
-			payloads: producer.rtpParameters.codecs.map(codec => codec.payloadType).join(" "),
-			connection: { version: 4, ip: '0.0.0.0' },
-			ext: [],
-			iceUfrag: transport.iceParameters.usernameFragment,
-			icePwd: transport.iceParameters.password,
-			mid: producer.rtpParameters.mid,
-			setup: transport.dtlsParameters.role === 'client'? 'active': 'actpass',
-			direction: 'recvonly',
-			rtcpMux: 'rtcp-mux',
-			rtcpFb: getRTCPFeedback(producer.rtpParameters.codecs),
-			ssrcs: [
-				{
-					id: producer.rtpParameters.encodings[0].ssrc,
-					attribute: "cname",
-					value: producer.rtpParameters.rtcp.cname
-				}
-			],
-			candidates: transport.iceCandidates.map(candidate => ({
-				foundation: candidate.foundation,
-				component: 1,
-				transport: candidate.protocol,
-				priority: candidate.priority,
-				ip: candidate.ip,
-				port: candidate.port,
-				type: candidate.type,
-				tcptype: candidate.tcpType,
-			})),
-			endOfCandidates: "end-of-candidates",
-			
-		}) 
+
+	const obj: Description = ({
+		rtp: producer.rtpParameters.codecs.map(codec => ({
+			payload: codec.payloadType,
+			codec: codec.mimeType.split("/")[1],
+			rate: codec.clockRate,
+			encoding: codec.channels
+		})),
+		fmtp: producer.rtpParameters.codecs.map(codec => ({
+			payload: codec.payloadType,
+			config: Object.keys(codec.parameters).map(key => key+"="+codec.parameters[key]).join(";")
+		})).filter(item => item.config !== ''),
+		type: producer.kind,
+		port: 7,
+		protocol: 'UDP/TLS/RTP/SAVPF',
+		payloads: producer.rtpParameters.codecs.map(codec => codec.payloadType).join(" "),
+		connection: { version: 4, ip: '0.0.0.0' },
+		iceUfrag: transport.iceParameters.usernameFragment,
+		icePwd: transport.iceParameters.password,
+		mid: producer.rtpParameters.mid,
+		setup: transport.dtlsParameters.role === 'client'? 'active': 'actpass',
+		rtcpMux: 'rtcp-mux',
+		rtcpFb: getRTCPFeedback(producer.rtpParameters.codecs),
+		ssrcs: [{
+				id: producer.rtpParameters.encodings[0].ssrc,
+				attribute: "cname",
+				value: producer.rtpParameters.rtcp.cname
+		}],
+		msid: producer.rtpParameters.rtcp.cname + " " + producer.id,
+		candidates: transport.iceCandidates.map(candidate => ({
+			foundation: candidate.foundation,
+			component: 1,
+			transport: candidate.protocol,
+			priority: candidate.priority,
+			ip: candidate.ip,
+			port: candidate.port,
+			type: candidate.type,
+			tcptype: candidate.tcpType,
+		})),
+		endOfCandidates: "end-of-candidates",
+		ext: producer.rtpParameters.headerExtensions.map(item => ({
+			value: item.id,
+			uri: item.uri
+		})),
+	}) 
+
+	if(producer.rtpParameters.encodings[0].rtx){
+		obj.ssrcs.push({
+			id: producer.rtpParameters.encodings[0].rtx.ssrc,
+			attribute: "cname",
+			value: producer.rtpParameters.rtcp.cname
+		})
+
+		obj.ssrcGroups = [{
+			semantics: "FID",
+			ssrcs: obj.ssrcs.map(item => item.id).join(" ")
+		}]
+	}
+	
+	return obj
 }
 
 export function generateOffer (transport: types.WebRtcTransport, consumers: types.Consumer[]){
 	
+	for(let consumer of consumers){
+		console.log(consumer.rtpParameters.encodings)
+	}
+
+	const fingerprint = transport.dtlsParameters.fingerprints.find(alg => alg.algorithm === 'sha-512')
+
 	return sdpTransform.write({
 		version: 0,
 		origin: {
@@ -85,15 +107,15 @@ export function generateOffer (transport: types.WebRtcTransport, consumers: type
 		timing: { start: 0, stop: 0 },
 		groups: [ { type: 'BUNDLE', mids: consumers.map((_, index) => index).join(' ')  } ],
 		fingerprint:{
-			type: transport.dtlsParameters.fingerprints[0].algorithm,
-			hash: transport.dtlsParameters.fingerprints[0].value
+			type: fingerprint.algorithm,
+			hash: fingerprint.value
 		},
 		setup: transport.dtlsParameters.role === 'client'? 'active': 'actpass',
 		iceOptions: 'renomination',
 		icelite: 'ice-lite',
 		msidSemantic: { semantic: 'WMS', token: '*' },
 		direction: "sendonly",
-		media: consumers.map(consumer => producerToMedia(transport, consumer)),
+		media: consumers.map(consumer => producerToMedia(transport, consumer))
 	})
 
 }

@@ -15,8 +15,8 @@ function ChatPage (){
 	const modal = useModal()
 
 	useEffect(() => {
-		const call = ({ userData, room_id }) => {
-			modal.open(<CallModalWindow userData={userData} incoming={true} room_id={room_id}/>)
+		const call = ({ userData, roomData }) => {
+			modal.open(<CallModalWindow userData={userData} incoming={true} room_id={roomData.room_id}/>)
 		}
 		ws.on('call', call)
 		return () => ws.off('call', call)

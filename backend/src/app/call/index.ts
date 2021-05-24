@@ -11,7 +11,12 @@ export default async function calls (fastify: AppFastifyInstance){
 	fastify.post("/", { schema: callSchema }, async (request: UserFastifyRequest) => {
 		const { user_id } = request.body as any
 		const userData = await fastify.model.usersModel.getUserData(request.userData.id) 
+		console.log(user_id)
+		if(!fastify.ws.connections.has(user_id)) return { error: { user_id: "Пользователь не в сети" }}
+		
 		const roomData = await fastify.mediaSoup.createRoom()
+
+		fastify.ws.send(user_id, "call", { roomData, userData });
 
 		return roomData
 	})
@@ -26,6 +31,14 @@ export default async function calls (fastify: AppFastifyInstance){
 		return userData
 	})
 
+	fastify.put("/:room_id/users/:user_id", { schema: userParamsSchema }, async (request: UserFastifyRequest) => {
+		const { room_id, user_id } = request.params as any
+		const { answer } = request.body as any 
+
+		const status = await fastify.mediaSoup.consume(room_id, user_id, answer)
+		return status
+	})
+
 	fastify.post("/:room_id/users/:user_id/produce", { schema: userParamsSchema }, async (request: UserFastifyRequest) => {
 		const { room_id, user_id } = request.params as any
 		const { offer } = request.body as any
@@ -35,7 +48,6 @@ export default async function calls (fastify: AppFastifyInstance){
 		for(let item of outbound){
 			fastify.ws.sendSocket(item.id, "consume", item)
 		}
-
 		return { answer }
 	})
 
