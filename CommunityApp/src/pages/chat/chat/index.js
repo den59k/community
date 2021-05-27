@@ -13,17 +13,20 @@ function Chat (){
 	
 	const routerStore = useRouterStore()
 	const ws = useWS()
-	const [ chatStore ] = useState(() => new ChatStore())
 
+	const [ chatStore ] = useState(() => new ChatStore())
 	const user_id = routerStore.currentPage.user_id
+
 	useEffect(() => {
 		chatStore.init(user_id)
-
 		const onMessage = (message) => 	chatStore.recieveMessage(message)
 
 		ws.on('message', onMessage)
-		return () => ws.off('message', onMessage)
+		return () => {
+			ws.off('message', onMessage)
+		}
 	}, [user_id, chatStore])
+
 
 	return (
 		<ChatLayout chatStore={chatStore}>

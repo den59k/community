@@ -12,7 +12,14 @@ class RouterStore {
 			status: observable
 		})
 		this.emitter = new EventEmitter()
-		this.on('handshake', (m) => console.log(m))
+		this.on('handshake', ({error, id}) => {
+			if(error) return console.log(error)
+			this.setId(id)
+		})
+	}
+
+	setId(id){
+		this.id = id
 	}
 
 	send(type, message){

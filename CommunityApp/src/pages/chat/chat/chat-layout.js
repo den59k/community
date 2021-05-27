@@ -6,6 +6,8 @@ import { useAuthStore } from 'src/providers/auth'
 import { useRouterStore } from 'src/providers/router'
 import { Container, Header, Left, Body, Right, Button, Icon, Title, Subtitle } from 'native-base';
 import { getTime } from 'src/statics/months'
+import { useModal } from '../../../providers/modal';
+import IncomingCall from '../../../components/modal-windows/incoming-call'
 
 const CustomBody = observer(({chatStore}) => {
 	if(chatStore.status !== 'success')
@@ -26,6 +28,11 @@ const CustomBody = observer(({chatStore}) => {
 function Layout ({children, chatStore}){
 
 	const routerStore = useRouterStore()
+	const modal = useModal()
+
+	const call = () => {
+		routerStore.push({...routerStore.currentPage, page: "call" })
+	}
 
 	return (
 		<Container style={styles.container}>
@@ -37,7 +44,7 @@ function Layout ({children, chatStore}){
 				</Left>
 				<CustomBody chatStore={chatStore}/>
 				<Right>
-					<Button transparent onPress={() => routerStore.push({...routerStore.currentPage, page: "call" })}>
+					<Button transparent onPress={call}>
 						<Icon name="md-videocam"/>
 					</Button>
 				</Right>

@@ -39,7 +39,7 @@ function producerToMedia(transport: types.WebRtcTransport, producer: types.Produ
 		port: 7,
 		protocol: 'UDP/TLS/RTP/SAVPF',
 		payloads: producer.rtpParameters.codecs.map(codec => codec.payloadType).join(" "),
-		connection: { version: 4, ip: '0.0.0.0' },
+		connection: { version: 4, ip: '127.0.0.1' },
 		iceUfrag: transport.iceParameters.usernameFragment,
 		icePwd: transport.iceParameters.password,
 		mid: producer.rtpParameters.mid,
@@ -67,6 +67,7 @@ function producerToMedia(transport: types.WebRtcTransport, producer: types.Produ
 			value: item.id,
 			uri: item.uri
 		})),
+		rtcpRsize: 'rtcp-rsize'
 	}) 
 
 	if(producer.rtpParameters.encodings[0].rtx){
@@ -86,12 +87,8 @@ function producerToMedia(transport: types.WebRtcTransport, producer: types.Produ
 }
 
 export function generateOffer (transport: types.WebRtcTransport, consumers: types.Consumer[]){
-	
-	for(let consumer of consumers){
-		console.log(consumer.rtpParameters.encodings)
-	}
 
-	const fingerprint = transport.dtlsParameters.fingerprints.find(alg => alg.algorithm === 'sha-512')
+	const fingerprint = transport.dtlsParameters.fingerprints[transport.dtlsParameters.fingerprints.length-1]
 
 	return sdpTransform.write({
 		version: 0,
@@ -101,7 +98,7 @@ export function generateOffer (transport: types.WebRtcTransport, consumers: type
 			sessionVersion: 2,
 			netType: 'IN',
 			ipVer: 4,
-			address: '127.0.0.1',
+			address: '0.0.0.0',
 		},
 		name: '-',
 		timing: { start: 0, stop: 0 },

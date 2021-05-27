@@ -1,7 +1,7 @@
 import { types } from 'mediasoup'
 
 const transportOptions = {
-	listenIps : [ { ip: "0.0.0.0", announcedIp: "192.168.0.100" } ],
+	listenIps : [ { ip: "0.0.0.0", announcedIp: "192.168.219.33" } ],
 	enableUdp : true,
 	enableTcp : true,
 	preferUdp : true
@@ -23,7 +23,7 @@ class User {
 
 	async init(router: types.Router){
 		this.consumeTransport = await router.createWebRtcTransport(transportOptions)
-		this.consumeTransport.on("icestatechange", state => console.log("receiver ICE state changed to "+state))
+		this.consumeTransport.on("dtlsstatechange", state => console.log(`receiver ${this.id} DTLS state changed to ${state}`))
 		const { id, iceParameters, iceCandidates, dtlsParameters, sctpParameters } = this.consumeTransport
 
 		return {
@@ -41,7 +41,7 @@ class User {
 
 	async createProduceTransport (router: types.Router){
 		this.produceTransport = await router.createWebRtcTransport(transportOptions)
-		this.consumeTransport.on("icestatechange", state => console.log("sender ICE state changed to "+state))
+		this.produceTransport.on("dtlsstatechange", state => console.log(`sender ${this.id} DTLS state changed to ${state}`))
 
 		return this.produceTransport
 	}
@@ -54,18 +54,19 @@ class User {
 			//await producer.enableTraceEvent([ "rtp", "pli" ]);
 			producer.on('trace', trace => console.log(trace))
 		}
+		return this.producers
 	}
 
 	async addConsumers (user: User, router: types.Router){
-		const consumers = []
+
 		for(let producer of user.producers){
 			const consumer = await this.consumeTransport.consume({
 				producerId: producer.id,
 				rtpCapabilities: router.rtpCapabilities,
 				paused: true
 			})
-			await consumer.enableTraceEvent([ "rtp", "pli" ]);
-	 		consumer.on('trace', trace => console.log(trace))
+			//await consumer.enableTraceEvent([ "rtp", "pli" ]);
+	 		consumer.on('trace', trace => console.log(trace.info.sequenceNumber + " packet with payload " + trace.info.payloadType))
 
 			this.consumers.push(consumer) 
 		}

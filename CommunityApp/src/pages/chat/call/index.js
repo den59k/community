@@ -11,41 +11,62 @@ import {
   mediaDevices,
   registerGlobals
 } from 'react-native-webrtc';
+import { useRouterStore } from 'src/providers/router'
+import { useWS } from 'src/providers/ws'
+import { REST } from 'src/services'
 
 function CallPage (){
 
 	const [ stream, setStream ] = useState()
+	const routerStore = useRouterStore()
+	const ws = useWS()
+	const [ connection, setConnection ] = useState({})
+		
+	useEffect(() => {
+
+		const pc = new RTCPeerConnection()
+		pc.onaddstream = (e) => {
+			console.log(JSON.stringify(e.stream._tracks))
+			setStream(e.stream.toURL())
+		}
+
+		const init = async () => {
+			let _room_id = routerStore.currentPage.room_id
+
+			if(!_room_id){
+				const roomData = await REST("/calls", { user_id: routerStore.user_id })
+				if(roomData.error) return console.log(roomData.error)
+				_room_id = roomData.room_id	
+			}
+
+			const { offer } = await REST("/calls/"+_room_id, { user_id: ws.id })
+			setConnection({ room_id: _room_id, user_id: ws.id, consumePc: pc })
+
+			if(!offer) return
+		}
+
+		init()
+	}, [])
 
 	useEffect(() => {
-		let isFront = true;
-		mediaDevices.enumerateDevices().then(sourceInfos => {
+		const onConsume = async ({ offer, consumers }) => {
+			const pc = connection.consumePc
+			await pc.setRemoteDescription(offer)
+			const answer = await pc.createAnswer()
 			
-			let videoSourceId;
-			for (let i = 0; i < sourceInfos.length; i++) {
-				const sourceInfo = sourceInfos[i];
-				if(sourceInfo.kind == "videoinput" && sourceInfo.facing == (isFront ? "front" : "environment")) {
-					videoSourceId = sourceInfo.deviceId;
-					console.log(sourceInfo)
-				}
-			}
-			mediaDevices.getUserMedia({
-				audio: true,
-				video: {
-					frameRate: 30,
-					facingMode: (isFront ? "user" : "environment"),
-					deviceId: videoSourceId
-				}
-			})
-			.then(stream => {
-				setStream(stream.toURL())
-			})
-			.catch(error => {
-				console.log(error)
-				// Log error
-			});
-		});
-	}, [])
-	console.log(stream)
+			await pc.setLocalDescription(answer)
+
+			const status = await REST("/calls/"+connection.room_id+"/users/"+connection.user_id, { answer }, 'PUT')
+			console.log(status)
+		}
+
+		ws.on("consume", onConsume)
+		return () => {
+			ws.off("consume", onConsume)
+		}
+
+	}, [ connection ])
+
 	return (
 		<CallLayout>
 			{stream && <RTCView objectFit="cover" style={{flex: 1}} streamURL={stream}/>}

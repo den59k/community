@@ -63,6 +63,7 @@ export default async function app (fastify: AppFastifyInstance){
 			if(key === user_id) continue
 			
 			await _user.addConsumers(user, room.router)
+			
 			const offer = { sdp: generateOffer(_user.consumeTransport, _user.consumers), type: 'offer' }
 
 			const consumers = _user.consumers.map(consumer => ({
@@ -87,10 +88,8 @@ export default async function app (fastify: AppFastifyInstance){
 		const sdp = sdpTransform.parse(answer.sdp)
 
 		const dtlsParameters = getDtlsParameters(sdp)
-		console.log(user.consumeTransport.dtlsState)
-		if(user.consumeTransport.dtlsState !== 'connected')
-			await user.confirmConsumeTransport({ dtlsParameters })
 
+		await user.confirmConsumeTransport({ dtlsParameters })
 		await user.resumeConsumers()
 
 		return { success: "success" }

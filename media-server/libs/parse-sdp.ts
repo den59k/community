@@ -1,12 +1,18 @@
 import { types } from 'mediasoup';
 import { SessionDescription } from 'sdp-transform'
 
+const sdpSetup = {
+	'active': 'client',
+	'passive': 'server',
+	'actpass': 'auto'
+}
+
 export function getDtlsParameters (sdp: SessionDescription): types.DtlsParameters {
 
 	const fingerprint = sdp.fingerprint || sdp.media[0].fingerprint
 
 	return {
-		role: sdp.setup === 'active'? 'client': 'server',
+		role: sdpSetup[sdp.setup || sdp.media[0].setup],
 		fingerprints: [
 			{
 				algorithm: fingerprint.type,
