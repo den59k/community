@@ -1,0 +1,3 @@
+[submodule "media-server"]
+	path = media-server
+	url = https://github.com/den59k/media-server.git
