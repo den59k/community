@@ -9,7 +9,7 @@ const server = fastify()
 server.register(app, { prefix: '/api' })
 
 const port = process.env.PORT || 3001
-server.listen(port, '0.0.0.0', function (err, address) {
+server.listen(port, function (err, address) {
   if (err) {
     console.log(err)
 		return

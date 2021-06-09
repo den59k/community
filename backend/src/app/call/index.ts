@@ -8,27 +8,42 @@ export default async function calls (fastify: AppFastifyInstance){
 			return reply.code(401).send({error: { access_token: "wrong token" }})
 	})
 
+	//Звонок от одного пользователя другому
 	fastify.post("/", { schema: callSchema }, async (request: UserFastifyRequest) => {
-		const { user_id } = request.body as any
+		const { user_id, callee } = request.body as any
 		const userData = await fastify.model.usersModel.getUserData(request.userData.id) 
-		console.log(user_id)
-		if(!fastify.ws.connections.has(user_id)) return { error: { user_id: "Пользователь не в сети" }}
+
+		if(!fastify.ws.connections.has(callee)) return { error: { callee: "Пользователь не в сети" }}
 		
 		const roomData = await fastify.mediaSoup.createRoom()
 
-		fastify.ws.send(user_id, "call", { roomData, userData });
+		fastify.ws.send(callee, "call", { roomData, userData });
+		
+		const connectionData = await fastify.mediaSoup.addUser(roomData.room_id, user_id)
 
-		return roomData
+		return { roomData, connectionData }
+	})
+
+	fastify.post("/:room_id/reject", { schema: roomParamsSchema }, async (request: UserFastifyRequest) => {
+		const { room_id } = request.params as any
+		const { user_id } = request.body as any
+		
+		console.log("REJECTED" + room_id)
+		
+		const users = await fastify.mediaSoup.getUsers(room_id)
+		for(let user of users)
+			fastify.ws.sendSocket(user.id, "reject-call", { room_id })
+		
+		return { status: "rejected" }
 	})
 
 	fastify.post("/:room_id", { schema: roomParamsSchema }, async (request: UserFastifyRequest) => {
 		const { room_id } = request.params as any
 		const { user_id } = request.body as any
 			
-		const userData = await fastify.mediaSoup.addUser(room_id, user_id)
-		fastify.ws.send(user_id, "call", { userData, room_id })
+		const connectionData = await fastify.mediaSoup.addUser(room_id, user_id)
 
-		return userData
+		return connectionData
 	})
 
 	fastify.put("/:room_id/users/:user_id", { schema: userParamsSchema }, async (request: UserFastifyRequest) => {

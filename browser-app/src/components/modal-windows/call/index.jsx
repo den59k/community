@@ -7,6 +7,7 @@ import { useWS } from "providers/ws";
 
 import styles from './style.module.sass'
 import { IoIosVideocam, IoMdMic } from 'react-icons/io'
+import { useModal } from "providers/modal-window";
 
 const delay = (seconds) => new Promise(res => setTimeout(res, seconds))
 
@@ -34,84 +35,12 @@ function CallModalWindow ({ userData, incoming, room_id }){
 	const [ connection, setConnection ] = useState({})
 
 	const ws = useWS()
-	
+	const modal = useModal()
+
 	const videoRef = useRef()
 	const sourceVideoRef = useRef()
 	
 	useEffect(() => {
-
-		// const init2 = async () => {
-			
-		// 	const { room_id: _room_id, transportData, routerRtpCapabilities } = await REST("/calls/"+userData.id, { incoming, room_id })
-
-		// 	const device = new mediasoupClient.Device();
-		// 	await device.load({routerRtpCapabilities})
-
-		// 	const transport = incoming?(
-		// 		device.createRecvTransport( transportData )
-		// 	): (
-		// 		device.createSendTransport( transportData )
-		// 	)
-
-		// 	const url = "http://localhost:5000/rooms/"+_room_id+"/ts/"+transportData.id
-		// 	transport.on("connect", async ({ dtlsParameters }, callback) => {
-		// 		const res = await REST(url, { dtlsParameters }, 'POST', false)
-		// 		callback()
-		// 	})
-
-		// 	if(!incoming){
-		// 		//Если звонок исходящий
-		// 		const stream = await navigator.mediaDevices.getUserMedia({video: true, audio: true})
-		// 		videoRef.current.srcObject = stream
-				
-		// 		transport.on("produce", async (parameters, callback) => {
-		// 			console.log(parameters)
-		// 			const { kind, rtpParameters } = parameters
-		// 			const data = await REST(url+"/produce", { kind, rtpParameters }, 'POST', false)
-		// 			const { id } = data
-		// 			callback({ id })
-		// 		})
-
-		// 		for(let track of stream.getTracks())
-		// 			await transport.produce ({ track })
-				
-		// 	}else{
-		// 		await delay(2000)
-				
-		// 		const consumersData = await REST(url+"/consume", {}, 'POST', false) 
-		// 		console.log(consumersData)
-		// 		const tracks = []
-		// 		for(let consumer of consumersData){
-		// 			const { track } = await transport.consume(consumer)
-		// 			tracks.push(track)
-		// 		}
-		// 		videoRef.current.srcObject = new MediaStream(tracks)
-		// 		await REST(url+"/resume", {}, 'POST', false)
-		// 	}	
-		// }
-
-		const init3 = async () => {
-			let _room_id = room_id
-
-			if(!_room_id){
-				const roomData = await REST("/calls", { user_id: userData.id })
-				_room_id = roomData.room_id	
-			}
-
-			const { routerRtpCapabilities, id, consumeTransport } = await REST("/calls/"+_room_id, {})
-			const device = new mediasoupClient.Device()
-			await device.load({routerRtpCapabilities})
-			const recvTransport = device.createRecvTransport(consumeTransport)
-			
-			const url = "http://localhost:5000/rooms/"+_room_id+"/users/"+id
-
-			recvTransport.on("connect", async ({ dtlsParameters }, callback) => {
-				const res = await REST(url, { dtlsParameters }, 'PUT', false)
-				callback()
-			})
-
-			setConnection({ device, recvTransport, room_id: _room_id, user_id: id })
-		}
 
 		const pc = new RTCPeerConnection()
 		pc.ontrack = (e) => {
@@ -119,37 +48,25 @@ function CallModalWindow ({ userData, incoming, room_id }){
 			videoRef.current.srcObject = e.streams[0]
 		}
 
+		const connect = async (offer) => {
+			if(!offer) return
+		}
+
 		const init = async () => {
-			let _room_id = room_id
-
-			if(!_room_id){
-				const roomData = await REST("/calls", { user_id: userData.id })
-				if(roomData.error) return console.log(roomData.error)
-				_room_id = roomData.room_id	
-			}
-
-			const { offer, transport, routerRtpCapabilities } = await REST("/calls/"+_room_id, { user_id: ws.id })
-
-			// console.log(transport)
-
-			// const device = new mediasoupClient.Device();
-			// await device.load({routerRtpCapabilities})
-
-			// const recvTransport = device.createRecvTransport(transport)
-
-			// recvTransport.on("connect", async ({ dtlsParameters }, callback) => {
-			// 	console.log(dtlsParameters)
-			// 	const url = "http://localhost:5000/rooms/"+_room_id+"/users/"+ws.id+"/_consume"
-			// 	const res = await REST(url, { dtlsParameters }, 'POST', false)
-			// 	callback()
-			// })
 			
-			setConnection({ room_id: _room_id, user_id: ws.id, consumePc: pc })
+			if(!room_id){
+				const { roomData, connectionData } = await REST("/calls", { callee: userData.id, user_id: ws.id })
+				
+				const { offer } = connectionData
 
-			if(!offer) return 
-
-			await pc.setRemoteDescription(offer)
-			const answer = await pc.createAnswer()
+				setConnection({ room_id: roomData.room_id, user_id: ws.id, consumePc: pc })
+				connect(offer)
+			}else{
+				const { offer } = await REST("/calls/"+room_id, { user_id: ws.id })
+			
+				setConnection({ room_id, user_id: ws.id, consumePc: pc })
+				connect(offer)
+			}
 		}
 
 		init()
@@ -159,22 +76,8 @@ function CallModalWindow ({ userData, incoming, room_id }){
 
 	useEffect(() => {
 		const onConsume = async ({ offer, consumers }) => {
-			// console.log(consumers)
-			// const tracks = []
-			// for(let consumer of consumers){
-			// 	const _consumer = await connection.recvTransport.consume(consumer)
-			// 	console.log(_consumer)
-				
-			// 	tracks.push(_consumer.track)
-			// }
-
-			// videoRef.current.srcObject = new MediaStream(tracks);
-
-			// const url = "http://localhost:5000/rooms/"+connection.room_id+"/users/"+connection.user_id+"/_consume"
-			// await REST(url, {}, 'PUT', false)
-
+			console.log(consumers)
 			console.log(offer)
-
 			const pc = connection.consumePc
 			await pc.setRemoteDescription(offer)
 			const answer = await pc.createAnswer()
@@ -186,9 +89,17 @@ function CallModalWindow ({ userData, incoming, room_id }){
 			console.log(status)
 		}
 
+		const onReject = ({ room_id }) => {
+			if(room_id === connection.room_id)
+				modal.close()
+		}
+
 		ws.on("consume", onConsume)
+		ws.on("reject-call", onReject)
+		
 		return () => {
 			ws.off("consume", onConsume)
+			ws.off("reject-call", onReject)
 		}
 	}, [ connection ])
 

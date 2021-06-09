@@ -17,7 +17,8 @@ export const userParamsSchema = getSchema({
 
 export const callSchema = getSchema({
 	properties: {
-		user_id: { type: 'number' }
+		callee: { type: 'number' },
+		user_id: { type: 'string' }
 	}, 
 	required: [ "user_id" ]
 })

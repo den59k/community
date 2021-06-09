@@ -3,6 +3,7 @@ import { observer } from 'mobx-react'
 import { useRouterStore } from 'src/providers/router'
 import { useWS } from 'src/providers/ws'
 import { useModal } from '../../providers/modal'
+import { REST } from 'src/services'
 import Layout from 'src/components/layout'
 
 import Chat from './chat'
@@ -35,12 +36,12 @@ function ChatPage (){
 		const call = ({ userData, roomData }) => {
 
 			const onAccept = () => {
-				console.log(userData)
 				routerStore.push({ page: "call", room_id: roomData.room_id, user_id: userData.id, incoming: true })
 			}
 	
 			const onReject = () => {
-				console.log('reject')
+				console.log("REJECTED")
+				REST("/calls/"+roomData.room_id+"/reject", { user_id: ws.id })
 			}	
 
 			modal.open(<IncomingCallModal title={"Звонок от пользователя "+userData.login} onAccept={onAccept} onReject={onReject}/>)
